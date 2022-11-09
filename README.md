@@ -1,6 +1,6 @@
 # mids-w203-lab-2-cinthya_javier_jian
 
-Lab 2
+LAB 2
 
 Research question
 Does a correlation exist between air quality index (AQI) and electric vehicle charging station location in California?
