@@ -7,7 +7,7 @@ Does a correlation exist between air quality index (AQI) and electric vehicle ch
 
 Source of data
 AQI data
-https://www.epa.gov/outdoor-air-quality-data/air-quality-index-report)
+https://www.epa.gov/outdoor-air-quality-data/air-quality-index-report
 
 Electric vehicle charging stations 
 https://afdc.energy.gov/fuels/electricity_locations.html#/find/nearest?fuel=ELEC
