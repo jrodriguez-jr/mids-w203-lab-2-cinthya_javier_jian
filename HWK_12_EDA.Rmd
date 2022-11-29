@@ -1,0 +1,411 @@
+---
+title: "HWK12_EDA"
+author: "Javier Rodriguez"
+date: "2022-11-26"
+output: html_document
+---
+
+# read text file
+```{r}
+df2 = read.delim('videos.txt')
+print(df2)
+```
+
+# load libraries
+```{r}
+install.packages("GGally")
+install.packages("janitor")
+```
+
+# load libraries
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(sandwich)
+library(stargazer)
+library(janitor)
+library(dplyr)
+library(car)
+library(lmtest)
+library(gridExtra)
+library(moments)
+```
+
+# summarize data
+```{r}
+summary(df2)
+```
+
+# count of video_id = "#NAME?"
+```{r}
+sum(df2$video_id == "#NAME?")
+```
+# summarize data
+```{r}
+sum(df2$video_id == "#NAME?")
+```
+
+# summarize data
+```{r}
+sum(nchar(as.character(df$video_id)) != 11)
+```
+```{r}
+sum(nchar(as.character(df2$video_id)) != 11)
+```
+
+# summarize data
+```{r}
+sum(is.na(df$views))
+```
+# summarize data
+```{r}
+sum(is.na(df2$views))
+```
+
+# summarize data
+```{r}
+df2Ln_Hist<-df2 %>%
+  ggplot(aes(x = log(views))) + 
+  geom_histogram() + 
+  labs(
+    x = 'ln(views)',
+    title = 'Distribution of ln(views)'
+  )
+```
+
+# summarize data
+```{r}
+qqView <- ggplot(df2, aes(sample = df2$views)) + geom_qq(distribution = qnorm) +
+  geom_qq_line(line.p = c(0.25,0.75), col = "blue") + labs(y="views", title="qq normal plot of views")
+```
+
+# summarize data
+```{r}
+qqLog <- ggplot(df2, aes(sample = log(df2$views))) + geom_qq(distribution = qnorm) +
+  geom_qq_line(line.p = c(0.25,0.75), col = "blue") + labs(y="ln(views)", title="qq normal plot of ln(views)")
+```
+
+# output the plots
+```{r}
+options(repr.plot.width=7.5, repr.plot.height=2)
+suppressWarnings(grid.arrange(df2_Hist, df2Ln_Hist, qqView, qqLog, ncol = 2, nrow = 2,
+                              padding = unit(0.1, "line"), widths = c(1,1)))
+```
+# output the plots
+```{r}
+mean(df2$views,na.rm=T)
+median(df2$views,na.rm=T)
+fivenum(df2$views)
+```
+# if your median is less than your mean, than your data is positively skewed (median just looks at observations), if the same, then symmetrical distribution, if your median is more than your mean, than your data is negatively skewed
+
+# output the plots
+```{r}
+mean(log(df2$views),na.rm=T)
+median(log(df2$views),na.rm=T)
+fivenum(log(df2$views))
+```
+# if the same, then symmetrical distribution
+
+# remove 129 cases, shapiro willts analysis
+
+#rating is a liechard scale, thus not metric
+
+#QQNorm plots of views
+```{r}
+par(mfrow=c(1,2))
+qqnorm(df2$views,main="QQNorm_views")
+qqnorm(log(df2$views),main="QQNorm_LN(views)")
+par(mfrow=c(1,1))
+```
+#print some summary diagnostics francier
+```{r}
+print(sprintf("The mean number of views is %.0f",mean(df2$views, na.rm = TRUE)))
+print(sprintf("The median number of views is %.0f",median(df2$views, na.rm = TRUE)))
+print(sprintf("The minimum number of views is %.0f",min(df2$views, na.rm = TRUE)))
+print(sprintf("The 25th percentile video has %.0f views",quantile(df2$views, na.rm = T, probs = c(0.25))))
+print(sprintf("The 75th percentile video has %.0f views",quantile(df2$views, na.rm = T, probs = c(0.75))))
+print(sprintf("The maximum number of views is %.0f",max(df2$views, na.rm = TRUE)))
+
+print("")
+print(sprintf("The mean number of ln(views) is %.2f",mean(log(df2$views), na.rm = TRUE)))
+print(sprintf("The median number of ln(views) is %.2f",median(log(df2$views), na.rm = TRUE)))
+```
+
+# What is rate? Rate is an average rating assigned by users. Users rate videos on a 1-5 scale with 5 being better and 1 being worse. Videos that have never been rated by anyone receive a zero.
+
+# Ratings. Rate it's actually a 5-step likert variable (non-metric) with a non-response category (zero). Because it's a highly subjective variable we know that the arithmetic mean is actually difficult to interpret in a meaningful way. One person's concept of a 5-start rating may be completely different than someone else. In a similar vein, it's not clear that the difference between a 1-star and a 2-star is the same as the difference between a 3-star and a 4-star.
+
+#QQNorm plots of views
+```{r}
+par(mfrow=c(1,2))
+hist(df2$rate)
+qqnorm(df2$rate)
+par(mfrow=c(1,1))
+```
+# zero means mission
+
+#
+```{r}
+mean_Rate<-mean(df2$rate,na.rm = TRUE)
+mean_Rate
+```
+# print summary diagnostics
+```{r}
+print(sprintf("The number of videos with a rating of zero is %.0f", sum(df2$rate==0, na.rm = TRUE)))
+print(sprintf("The maximum number of views for a video with zero ratings is %.0f views", max(df2[df2$rate==0,"views"], na.rm = TRUE)))
+print(sprintf("The 99th percentile video (in terms of views) has %.0f views",quantile(df2[df2$rate==0,"views"], na.rm = T, probs = c(0.99))))
+```
+
+#print some summary diagnostics francier
+```{r}
+print(sprintf("The mean rating (videos with ratings only) is %.2f",mean(df2[df2$rate !=0,"views"], na.rm = TRUE)))
+print(sprintf("The median rating (videos with ratings only) is %.2f",median(df2[df2$rate !=0,"views"], na.rm = TRUE)))
+print(sprintf("The minimum rating (videos with ratings only) is %.2f",min(df2[df2$rate !=0,"views"], na.rm = TRUE)))
+print(sprintf("The 25th percentile video (video with ratings only) is %.2f views",quantile(df2[df2$rate!=0,"views"], na.rm = T, probs = c(0.25))))
+print(sprintf("The 75th percentile video (video with ratings only) is %.2f views",quantile(df2[df2$rate!=0,"views"], na.rm = T, probs = c(0.75))))
+print(sprintf("The maximum rating (videos with ratings only) is %.2f",max(df2[df2$rate !=0,"views"], na.rm = TRUE)))
+print(sprintf("%.1f percent of rated videos have a 5.0 rating", 100.0*sum(df2$rate == 5.0, na.rm = TRUE)))
+
+print("")
+```
+# Length. Length is the length of the video in seconds. Video length is natively in seconds, but it is converted to minutes in the duscussion and figures below so as to increase comprehensibility. Issues with length data. The same 9 videos that are missiong rate and views are also missing length. Description of length data. Videos vary from a length of 1 second to an hour and 28 minutes. However, only half a percent of videos are longer than 11 minutes. Those videos that are longer than 11 minutes seem to come exclusively from large "verified" organizations and media outlets. We see uploaders like "tokyomx", "CharlieRose" and "GoogleDevelopers". The fact that the videos are cut off at 0 seconds on the left side and at 11 minutes on the right side mean that the data is very non-normal.  The videos longer than 11 minutes are considerable outliers. These points will have a lot of leverage because they are an order of magnitude longer than the typical video. We also know that these long videos have a common characteristic that they are tied to larger companies and likely have a built-in audience in a way that the typical youtube video does not. Any variation that we see tied to these videos could be reasonably ascribed to the fact that they are tied to these larger entities more than the fact they are long. We can clearly see this effect at work when we look at the medain views for a 10-11 min video and compaare them to the median views for an 11-12 min video. The median 11-12 minute video has 5 times the views of the median 10-11 minute video. 
+
+#This substantial difference in the population of videos longer than 11 minutes and thos shorter than 11 minutes challenges the CLM assumptions 2 and 4. ClM assumption 2 is that the observations are a product of random sampling; this is not true for the videos longern than 11 minutes. There is a certain renown threshold that needs to be passed in order to be able to post videos longer than 11 minutes. This means that we know there is bias in these observations. CLM assumption 4 is that population error is has NA expected value . I this case, error's units would be views. We know that the entities uploading. To alleviate this problem which will cause our CLM assumptions to fail, **we will not consider videos longer than 11 minutes in this analysis.If we want to look at videos of such length in the future, we can narrow our scope so that we are only looking at the verified users that are allowed to post videos longer than 11 minutes. In that case, we only are comparing like with like and we don't break our CLM assumptions in an obvious way.
+
+#histograms of length
+```{r}
+lHist<-ggplot(data=df2, aes(x=length/60))+
+  geom_histogram(breaks=seq(-.125,20.125,by=.25), fill="black", alpha = .5,
+                 aes(y=100*..count../sum(..count..))) + 
+  scale_y_continuous(breaks = seq(0,10, by=5), limits=c(0,10)) +
+  labs(title="Historgram of length",x="length (minutes)",
+       y="Percent of videos")
+```
+
+#make histogram of natural log of length
+```{r}
+lnlHist<-ggplot(data=df2, aes(x=log(length)))+
+  geom_histogram(breaks=seq(-.05,9.05,by=.1), fill="black", alpha = .5,
+                 aes(y=100*..count../sum(..count..))) + 
+  scale_y_continuous(breaks = seq(0,10, by=5), limits=c(0,10)) +
+  labs(title="Historgram of ln(length)",x="ln(length)",
+       y="Percent of videos")
+```
+
+#make a normal quantile-quantile plot for the length
+```{r}
+qqLen <- ggplot(df2, aes(sample = df2$length/60)) + geom_qq(distribution = qnorm) + geom_qq_line(line.p = c(0.25,0.75), col = "blue") + labs(y="length (minutes)", title = "qq normal plot of length")
+```
+
+#output of plots
+```{r}
+options(repr.plot.width=7.5, repr.plot.height=2)
+suppressWarnings(grid.arrange(lHist,qqLen,ncol=2,nrow=1,
+                              padding = unit(0.1, "line"), widths = c(1,1)))
+```
+#
+```{r}
+par(mfrow=c(1,2))
+hist(df2$length)
+qqnorm(df2$length)
+par(mfrow=c(1,1))
+```
+#print some summary diagnostics
+```{r}
+print(sprintf("%.0f videos are longer than 11 minutes.", sum(df2$length > 660, na.rm = TRUE)))
+print(sprintf("%.1f percent of videos are longer than 11 minutes.",100.0*sum(df2$length > 660, na.rm = TRUE)))
+print(sprintf("%.1f percent of videos are longer than 11 minutes were uploaded by 'GoogleDevelopers'.",100.0*sum(df2$length > 660 & df2$uploader == 'GoogleDevelopers', na.rm = TRUE)/sum(df2$length > 660, na.rm = TRUE)))
+print("")
+print(sprintf("The median number of views for videos over 11 minutes is %.0f,  minutes.",100.0*sum(df2$length > 660, na.rm = TRUE)))
+```
+#
+```{r}
+print(sprintf("The median number of views 0-2 minute videos is %.0f",median(df2[df2$length <=2*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views 2-4 minute videos is %.0f",median(df2[df2$length > 2*60 & df2$length <= 4*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views 4-6 minute videos is %.0f",median(df2[df2$length > 4*60 & df2$length <= 6*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views 6-8 minute videos is %.0f",median(df2[df2$length > 6*60 & df2$length <= 8*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views 8-10 minute videos is %.0f",median(df2[df2$length > 8*60 & df2$length <= 10*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views 10-11 minute videos is %.0f",median(df2[df2$length > 10*60 & df2$length <= 11*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views 11-12 minute videos is %.0f",median(df2[df2$length > 11*60 & df2$length <= 12*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views 12-14 minute videos is %.0f",median(df2[df2$length > 12*60 & df2$length <= 14*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views 14-18 minute videos is %.0f",median(df2[df2$length > 14*60 & df2$length <= 18*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views 18-26 minute videos is %.0f",median(df2[df2$length > 18*60 & df2$length <= 26*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views 26-42 minute videos is %.0f",median(df2[df2$length > 26*60 & df2$length <= 42*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views 42-74 minute videos is %.0f",median(df2[df2$length > 42*60 & df2$length <= 74*60, "views"],na.rm=TRUE)))
+print(sprintf("The median number of views over 74 minute videos is %.0f",median(df2[df2$length > 74*60, "views"],na.rm=TRUE)))
+```
+
+# 
+```{r}
+mean(df2$length/60,na.rm=T)
+median(df2$length/60,na.rm=T)
+fivenum(df2$length/60)
+
+print(sprintf("The mean length is %.2f minutes", mean(df2$length, na.rm=TRUE)/60))
+print(sprintf("The median length is %.2f minutes", median(df2$length,na.rm=TRUE)/60))
+```
+# remove NAS
+```{r}
+df2 <- df2[!is.na(df2$views),]
+```
+
+# remove 11+ minute videos
+```{r}
+df2 <- df2[df2$length <= 660,]
+```
+
+# assign ratings to the unrated videos
+```{r}
+df2[df2$rate == 0, "rate"] <- mean_rate
+dim(df2)
+```
+
+#
+```{r}
+cor(cbind(log(df2$views), df2$views,df2$rate,df2$length,deparse.level = 2))
+df <- as.data.frame(cbind(log(df2$views), df2$views, df2$rate, df2$length/60))
+```
+#
+```{r}
+pairs(~log(df2$views) + df2$views + df2$rate + df2$length,
+      lower.panel = panel.smooth)
+```
+
+#scatterplot
+```{r}
+scatterplotMatrix(~log(df2$views) + df2$views + df2$rate + df2$length,
+                  data = NULL, plot.points = F)
+```
+
+#
+```{r}
+df %>%
+  ggpairs(columns = c("Log_Views","Views","Rate","Length_Min"),
+          upper = list(continuous=wrap('cor',size=3)))
+```
+#add a vector for length in minutes to improve interpretability
+```{r}
+df2$lenMin<-df2$length/60
+```
+
+#create model
+```{r}
+model1 <- lm(log(views) ~ rate + lenMin, data=df2)
+```
+
+#create model diagnostic plots
+
+#Assumptions
+#1. Linearity C.1
+#2. IID C.2
+#3. Zero Conditional Mean
+#4. Homoscedasticity C.3
+#5. No Perfect Multicolinear C.4
+#6. Normality of Errors C.5
+
+#Which-which?, which is a subset of the numbers 1:6, by default 1:3, 5, referring to 
+#1. Residuals vs Fitted", aka 'Tukey-Anscombe' plot
+#2. "Normal Q-Q" plot, an enhanced qqnorm(resid(.))
+#3. "Scale-Location"
+#4. "Cook's distance"
+#5. "Residuals vs Leverage"
+#6. "Cook's dist vs Lev./(1-Lev.)"
+
+#Zero Condition Mean Linearity
+```{r}
+plot(model1, which=1)
+```
+#BIF of regression
+
+#Colinearity
+```{r}
+print("Computation of Variance Inflation Factor (VIF)")
+vif(model1)
+```
+
+#Normality
+```{r}
+plot(model1,which=2)
+```
+
+#Test model normality
+```{r}
+print("Formal Tests of Residual Normality")
+set.seed(56423)
+```
+
+```{r}
+shapiro.test(sample(model1$residuals, size = 4500, replace=TRUE))
+shapiro.test(sample(model1$residuals, size = 300, replace=TRUE))
+```
+
+```{r}
+jarque.test(model1$residuals)
+jarque.test(sample(model1$residuals, size = 300, replace=TRUE))
+```
+
+#
+```{r}
+hist(model1$residuals)
+```
+
+#
+```{r}
+kurtosis(model1$residuals)-3
+skewness(model1$residuals)
+```
+
+#
+```{r}
+skewness(model1$residuals) +c(-1,1)*(6/dim(df2)[1])^0.5
+kurtosis(model1$residuals) +c(-1,1)*(24/dim(df2)[1])^0.5
+```
+
+#Heteroscadesticity
+```{r}
+plot(model1,which=3)
+print("Formal Test of Heteroskedasticity")
+bptest(model1)
+```
+
+#Outliers
+```{r}
+plot(model1,which=4)
+thresCook <- 4/(dim(df2)[1] - length(model1$coefficients))
+thresCook
+abline(h=thresCook, col='red')
+```
+
+#print summary statistics for model
+```{r}
+print("Model Summary Data - Non-heteroskedasticity-robost Standards Errors")
+summary(model1)
+```
+
+#
+```{r}
+print("Coefficients with Heteroskedasticity-robust Standard Errors")
+coeftest(model1, vcov = vcovHC)
+```
+
+# create a variable to hold my robust standard errors
+```{r}
+se.model1 <- sqrt(diag(vcovHC(model1)))
+```
+
+# display the regression table with those robust errors
+```{r}
+suppressWarnings(stargazer(model1,type = "text",omit.stat = "f",
+                           se = list(se.model1),
+                           star.cutoffs = c(0.05, 0.01, 0.001)))
+```
+
+#Coef Interpretation
+```{r}
+exp(0.444)
+exp(0.078)
+```
+
+#
