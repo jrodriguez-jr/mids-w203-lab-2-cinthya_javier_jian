@@ -3,13 +3,9 @@
 LAB 2
 
 Research question
-Does a correlation exist between air quality index (AQI) and electric vehicle charging station location in California?
+Minimizing the number of words in a YouTube video title for for YouTube reviews and unboxings helps increase the number of views.
 
 Source of data
-AQI data
-https://www.epa.gov/outdoor-air-quality-data/air-quality-index-report
+https://components.one/datasets/youtube-reviews-unboxings-dataset
 
-Electric vehicle charging stations 
-https://afdc.energy.gov/fuels/electricity_locations.html#/find/nearest?fuel=ELEC
-
-Unit of observation
+Unit of observation: views
