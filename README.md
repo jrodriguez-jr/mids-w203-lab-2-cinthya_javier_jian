@@ -2,7 +2,7 @@
 
 LAB 2
 
-Research question
+Research question:
 Minimizing the number of words in a YouTube video title for for YouTube reviews and unboxings helps increase the number of views.
 
 Source of data
